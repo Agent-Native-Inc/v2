@@ -1,0 +1,55 @@
+version: "2"
+linters:
+  default: all
+  disable:
+    - depguard # no banned-import policy to enforce
+    - exhaustruct # zero values are meaningful in Go; listing every field adds noise
+    - varnamelen # short names in short scopes are idiomatic Go
+    - wsl # whitespace style only
+    - wsl_v5 # whitespace style only
+    - nlreturn # whitespace style only
+    - ireturn # cobra and io interfaces are returned on purpose
+    - testpackage # e2e is already its own package
+    - paralleltest # e2e tests share fixtures; parallelism is opted into per test
+    - tparallel # same as paralleltest
+    - gochecknoglobals # cobra commands and embedded files are package globals
+    - gochecknoinits # cobra registers subcommands in init
+    - lll # long lines are fine when gofumpt is happy
+    - mnd # sizes and timeouts are named where they matter
+    - funlen # length limits are covered by gocognit
+    - cyclop # covered by gocognit
+    - gocyclo # covered by gocognit
+    - nestif # covered by gocognit
+    - forbidigo # a CLI prints to stdout
+    - err113 # errors carry user-facing messages built with fmt.Errorf
+    - wrapcheck # errors from internal packages are already worded for users
+    - noinlineerr # `if err := f(); err != nil` is idiomatic Go
+    - exhaustruct_v5 # same as exhaustruct
+    - tagliatelle # JSON tags are the wire format the server and old binaries read
+    - goconst # folder names, change kinds and API argument keys read clearer inline
+    - gomodguard # deprecated; default: all still enables it
+  settings:
+    gosec:
+      excludes:
+        - G204 # v2 runs git and ffmpeg with arguments it builds; that's the job
+        - G304 # a CLI reads the paths its user points it at
+        - G703 # same as G304, found by taint analysis
+        - G301 # project folders and files are shared like a git checkout's: 0755 and 0644
+        - G302 # same as G301
+        - G306 # same as G301
+    staticcheck:
+      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022", "-ST1005"] # ST1005: error strings are the sentences users read
+  exclusions:
+    rules:
+      - linters: [noctx]
+        text: "os/exec.Command must not be called" # git and ffmpeg run to completion; nothing cancels them
+      - path: _test\.go
+        linters:
+          - gosec # tests write temp files and run the binary they built
+          - forcetypeassert # a wrong type in a fake server's JSON should panic the test
+          - dogsled
+          - noctx
+formatters:
+  enable:
+    - gofumpt
+    - gci

@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Release public key and fake secrets that tests feed to v2's secret check"
+regexes = [
+  '''Yjs9xfruprB6/6SVFzclHFvS5zpMRbG59AXEZ1abYTQ=''',
+  '''el_abcdef123456''',
+  '''ghp_0123456789abcdefghijABCDEFGHIJ''',
+]
