@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
-	"github.com/Agent-Native-Inc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/store"
 	"golang.org/x/sys/unix"
 )
 

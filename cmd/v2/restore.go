@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
-	"github.com/Agent-Native-Inc/v2/internal/store"
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 // runRestore brings the folder back to version v exactly, then saves that as a new version.

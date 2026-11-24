@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
-	"github.com/Agent-Native-Inc/v2/internal/media"
-	"github.com/Agent-Native-Inc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/media"
+	"github.com/agentnativeinc/v2/internal/store"
 )
 
 type pushFile struct {

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
-	"github.com/Agent-Native-Inc/v2/internal/store"
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 // checkSaveFlags refuses a save without the user's prompts or with a secret in what goes to the

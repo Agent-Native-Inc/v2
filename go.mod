@@ -1,4 +1,4 @@
-module github.com/Agent-Native-Inc/v2
+module github.com/agentnativeinc/v2
 
 go 1.26.11
 

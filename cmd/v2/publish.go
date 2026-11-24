@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/gitx"
 )
 
 func runVisibility(dir, visibility string) error {

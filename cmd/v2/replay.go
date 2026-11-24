@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Agent-Native-Inc/v2/internal/store"
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 // startingDir holds a project's starting files when its versions are git: no version contains

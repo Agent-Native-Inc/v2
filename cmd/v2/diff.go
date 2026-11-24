@@ -24,9 +24,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Agent-Native-Inc/v2/internal/media"
-	"github.com/Agent-Native-Inc/v2/internal/platform"
-	"github.com/Agent-Native-Inc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/media"
+	"github.com/agentnativeinc/v2/internal/platform"
+	"github.com/agentnativeinc/v2/internal/store"
 )
 
 // The page, built from web/ by `npm run build` (run it before `go build`; see CONTRIBUTING.md).

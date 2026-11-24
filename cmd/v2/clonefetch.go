@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/store"
 )
 
 // A blob stored in parts and never hashed is keyed by this prefix; only its size can be checked.

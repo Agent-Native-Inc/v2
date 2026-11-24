@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/gitx"
 )
 
 var versionTag = regexp.MustCompile(`^v([0-9]+)$`)

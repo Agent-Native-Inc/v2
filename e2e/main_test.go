@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 func goBuild(path, flags string) {
 	args := []string{"build", "-ldflags", flags, "-o", path}
 	if os.Getenv("GOCOVERDIR") != "" { // scripts/coverage.sh: the binary records which code each test ran
-		args = append(args, "-cover", "-coverpkg=github.com/Agent-Native-Inc/v2/...")
+		args = append(args, "-cover", "-coverpkg=github.com/agentnativeinc/v2/...")
 	}
 	if out, err := exec.Command("go", append(args, "../cmd/v2")...).CombinedOutput(); err != nil {
 		panic(string(out))

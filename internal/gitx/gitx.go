@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Agent-Native-Inc/v2/internal/platform"
+	"github.com/agentnativeinc/v2/internal/platform"
 )
 
 func errNoGit() error {

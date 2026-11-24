@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Agent-Native-Inc/v2/internal/platform"
-	"github.com/Agent-Native-Inc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/platform"
+	"github.com/agentnativeinc/v2/internal/store"
 )
 
 // signingKey is the release public key. Release builds never set it; the e2e tests link in their own

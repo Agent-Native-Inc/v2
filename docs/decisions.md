@@ -53,7 +53,7 @@ project/
 - Use `cobra` (which brings `pflag`), not the stdlib `flag` package.
 - **Why:** stdlib `flag` stops at the first positional argument, so `v2 import a.mp4 --to x` silently misreads `--to`. Cobra finds flags anywhere and leaves room to grow.
 
-## Module path is `github.com/Agent-Native-Inc/v2` (2026-11-24)
+## Module path is `github.com/agentnativeinc/v2` (2026-11-24, org renamed 2026-11-25)
 - It matches the repo.
 - Go reads a path ending in `/v2` as "major version 2", so `go install ...@v0.x` fails. That costs nothing: `go install` never worked here (see README).
 
