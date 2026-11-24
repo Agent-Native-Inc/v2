@@ -1,0 +1,20 @@
+name: Bug
+description: v2 did something wrong
+body:
+  - type: textarea
+    attributes:
+      label: What happened
+      description: The command you ran and its full output.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Version and system
+      description: Output of `v2 --version`, plus your OS and its version.
+    validations:
+      required: true

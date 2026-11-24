@@ -1,0 +1,3 @@
+[default.extend-words]
+seeked = "seeked" # the DOM media event
+alls = "alls" # ffmpeg's noise filter option

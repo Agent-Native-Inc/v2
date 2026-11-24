@@ -1,0 +1,238 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, so govulncheck sees new advisories without a push
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # Only a newer push to the same PR cancels a run; runs on main always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # The disk image tests build v2 as root in a checkout another user owns, where git refuses to stamp the build.
+  GOFLAGS: -buildvcs=false
+  # A past release, for the test that has it and this build read each other's projects.
+  OLD_RELEASE: v0.10.2
+
+jobs:
+  lint-go:
+    strategy:
+      fail-fast: false
+      matrix:
+        goos: [linux, darwin]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      # The binary embeds the built page; a stand-in lets the Go code compile without building it.
+      - run: mkdir -p cmd/v2/dist && touch cmd/v2/dist/index.html
+      - run: go mod tidy -diff
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        env:
+          GOOS: ${{ matrix.goos }}
+        with:
+          version: v2.15.0
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
+
+  lint-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run fmt:check
+
+  lint-repo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: shellcheck scripts/*.sh
+      - run: go run mvdan.cc/sh/v3/cmd/shfmt@v3.14.1 -i 2 -d scripts/*.sh
+      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - run: go run github.com/zricethezav/gitleaks/v8@v8.30.1 dir . --no-banner --redact
+      - uses: crate-ci/typos@276087d9a4f06398b3e04825487805e2d7375888 # v1.52.2
+      - uses: zizmorcore/zizmor-action@bd12b495c90993a4301c73398142281a61499af3 # v0.9.0
+        with:
+          advanced-security: false
+          min-severity: low
+          version: 1.32.0
+
+  page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: web
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: page
+          path: cmd/v2/dist
+          retention-days: 1
+
+  linux:
+    needs: page
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: page
+          path: cmd/v2/dist
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg exfatprogs dosfstools
+      - run: git --version
+      - name: Download the past release
+        run: |
+          base=https://v2.video/releases/$OLD_RELEASE
+          curl -fsSL -o "$RUNNER_TEMP/v2-linux-amd64" "$base/v2-linux-amd64"
+          curl -fsSL "$base/checksums.txt" | grep ' v2-linux-amd64$' | (cd "$RUNNER_TEMP" && sha256sum -c -)
+          chmod +x "$RUNNER_TEMP/v2-linux-amd64"
+          echo "V2_OLD_BIN=$RUNNER_TEMP/v2-linux-amd64" >> "$GITHUB_ENV"
+      - run: go test -count=1 -timeout 20m -v ./...
+      # Only the disk image tests need root, to loop-mount their images; as a normal user they skip.
+      - run: sudo env "PATH=$PATH" "GOCACHE=$(go env GOCACHE)" "GOMODCACHE=$(go env GOMODCACHE)" "GOFLAGS=$GOFLAGS" go test -count=1 -timeout 20m -v -run "$DISK_TESTS" ./e2e/
+        env:
+          DISK_TESTS: ^(TestImportFromOtherDisk|TestImportOnExFAT|TestCloneThenSaveCopiesNothing|TestRestoreCopiesOnce|TestSaveSeesARenderRedoneWithinTheDiskClockStep|TestSaveAndRestoreWithTheStoreOnAnotherDisk)$
+
+  old-git:
+    needs: page
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: ubuntu:20.04
+      options: --privileged
+    steps:
+      - run: apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git ffmpeg exfat-utils dosfstools ca-certificates
+      - run: git --version
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: page
+          path: cmd/v2/dist
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      - run: go test -count=1 -timeout 20m -v ./...
+
+  fedora:
+    needs: page
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: fedora:45
+      options: --privileged
+    steps:
+      - run: dnf install -y -q git tar gzip ffmpeg-free openh264 exfatprogs dosfstools e2fsprogs util-linux
+      # Fedora's own ffmpeg has no libx264, so push makes the 1080p copy with libopenh264; the test for that skips without it.
+      - run: ffmpeg -hide_banner -encoders | grep ' libopenh264 '
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: page
+          path: cmd/v2/dist
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      - run: go test -count=1 -timeout 20m -v ./...
+
+  macos:
+    needs: page
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: page
+          path: cmd/v2/dist
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      - run: brew install ffmpeg
+      - run: go test -count=1 -timeout 20m -v ./...
+
+  # Builds every binary a release ships, so a platform that stops compiling fails here and not at release time.
+  cross:
+    needs: page
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: page
+          path: cmd/v2/dist
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      - run: |
+          for target in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64; do
+            CGO_ENABLED=0 GOOS=${target%/*} GOARCH=${target#*/} go build -trimpath -o /dev/null ./cmd/v2
+          done
+
+  # The one check the main branch requires. A job that needs a failed job is skipped, and GitHub counts
+  # a skipped check as passing, so this fails unless every job really succeeded.
+  ci-ok:
+    if: always()
+    needs: [lint-go, lint-web, lint-repo, page, linux, old-git, fedora, macos, cross]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        run: exit 1
