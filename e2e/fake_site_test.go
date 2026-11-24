@@ -26,8 +26,8 @@ func siteEnv(t *testing.T, url string) ([]string, string) {
 	return append([]string{"PATH=" + noBrowser + ":" + os.Getenv("PATH"), "HOME=" + t.TempDir(), "V2_SERVER=" + url, "V2_SITE=https://site.test"}, gitIdentity...), opened
 }
 
-// fakeSite stands in for v2.video's Convex functions (convex/cli.ts) over Convex's HTTP API, and for
-// R2's signed part uploads and downloads.
+// fakeSite stands in for v2.video's HTTP API, and for the signed part uploads and downloads of its
+// storage.
 type fakeSite struct {
 	mu        sync.Mutex
 	srv       *httptest.Server
@@ -38,7 +38,7 @@ type fakeSite struct {
 	pushes    []map[string]any
 	approved  bool
 	loggedOut bool
-	parts     map[string]map[int][]byte // R2 upload id -> its parts so far
+	parts     map[string]map[int][]byte // upload id -> its parts so far
 	starts    map[string]int            // sha256 -> times cli:r2Start was called
 	ids       int
 	hangBig   bool                // hold every full-size part after the first open, like a push about to be killed
@@ -50,18 +50,18 @@ type fakeSite struct {
 	// For v2 clone: what cli:clone returns, and the blobs it can download.
 	project      map[string]any
 	cloneArgs    map[string]any
-	stored       map[string][]byte // sha256 -> bytes; R2 blobs come through a redirect, the rest in two parts
-	r2           map[string]bool   // stored by cli:r2Complete
+	stored       map[string][]byte // sha256 -> bytes; stored blobs come through a redirect, the rest in two parts
+	completed    map[string]bool   // stored by cli:r2Complete
 	redirects    int
 	downloads    map[string]int
 	failAfter    int    // refuse blob downloads after this many blobs, like a dropping connection
 	corrupt      string // this sha256 is served with its bytes changed
 	calls        []string
-	refuse       bool     // reply to cli:push the way Convex rejects a request: {"code", "message"}
+	refuse       bool     // reply to cli:push the way the site rejects a request: {"code", "message"}
 	limit        float64  // when set, cli:whoami says the account holds 0 bytes of this many
 	stray        string   // cli:blobUrls also returns this hash, which wasn't asked for, with stored["stray"] as its bytes
 	dropComplete string   // cut the connection on this sha256's next cli:r2Complete, like Wi-Fi dropping at the end of an upload
-	pollFaults   []string // how the next cli:whoami calls fail while login waits: "drop" the connection, "cut" the reply short, "502" from a gateway, or "503" from an overloaded Convex
+	pollFaults   []string // how the next cli:whoami calls fail while login waits: "drop" the connection, "cut" the reply short, "502" from a gateway, or "503" from an overloaded server
 	pollError    string   // cli:whoami fails with this message
 	revoked      bool     // cli:whoami knows no one by the old token, as after a logout on the site; a new login clears it
 	// For v2 update: what cli:latest says, and the release files (version/file -> bytes) behind /cli/.
@@ -80,7 +80,7 @@ func startSite(t *testing.T) *fakeSite {
 	site := &fakeSite{
 		uploads: map[string][]byte{}, types: map[string]string{}, blobs: map[string]bool{},
 		parts: map[string]map[int][]byte{}, starts: map[string]int{}, etagsOf: map[string][]string{},
-		stored: map[string][]byte{}, r2: map[string]bool{}, downloads: map[string]int{}, visibility: map[string]string{},
+		stored: map[string][]byte{}, completed: map[string]bool{}, downloads: map[string]int{}, visibility: map[string]string{},
 	}
 	site.srv = httptest.NewServer(site)
 	t.Cleanup(site.srv.Close)
@@ -116,7 +116,7 @@ func (f *fakeSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		blob, part, inParts := strings.Cut(rest, "/")
 		if !inParts {
 			f.redirects++
-			http.Redirect(w, r, f.url+"/r2/"+blob, http.StatusFound)
+			http.Redirect(w, r, f.url+"/storage/"+blob, http.StatusFound)
 			return
 		}
 		f.download(w, blob, part == "0", func(b []byte) []byte {
@@ -128,10 +128,10 @@ func (f *fakeSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if file, ok := strings.CutPrefix(r.URL.Path, "/cli/"); ok {
-		http.Redirect(w, r, f.url+"/r2cli/"+file, http.StatusFound)
+		http.Redirect(w, r, f.url+"/storage-cli/"+file, http.StatusFound)
 		return
 	}
-	if file, ok := strings.CutPrefix(r.URL.Path, "/r2cli/"); ok {
+	if file, ok := strings.CutPrefix(r.URL.Path, "/storage-cli/"); ok {
 		if b, ok := f.release[file]; ok {
 			_, _ = w.Write(b)
 			return
@@ -139,7 +139,7 @@ func (f *fakeSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	if blob, ok := strings.CutPrefix(r.URL.Path, "/r2/"); ok {
+	if blob, ok := strings.CutPrefix(r.URL.Path, "/storage/"); ok {
 		f.download(w, blob, true, func(b []byte) []byte { return b })
 		return
 	}
@@ -169,7 +169,7 @@ func (f *fakeSite) serve(b []byte) string {
 	return sum(b)
 }
 
-// putPart stores one part of an R2 upload.
+// putPart stores one part of an upload.
 func (f *fakeSite) putPart(w http.ResponseWriter, r *http.Request, rest string, body []byte) {
 	id, n, _ := strings.Cut(rest, "/")
 	number, _ := strconv.Atoi(n)
@@ -205,12 +205,12 @@ func send(w http.ResponseWriter, v any) {
 	_, _ = w.Write(append(b, '\n'))
 }
 
-// reply answers a Convex call with its value.
+// reply answers a call with its value.
 func reply(w http.ResponseWriter, v any) {
 	send(w, map[string]any{"status": "success", "value": v})
 }
 
-// refuse answers a Convex call the way a ConvexError does: the message is in errorData.
+// refuse answers a call the way a function's thrown error does: the message is in errorData.
 func refuse(w http.ResponseWriter, msg string) {
 	send(w, map[string]any{"status": "error", "errorMessage": "Server Error", "errorData": msg})
 }
@@ -222,7 +222,7 @@ func drop(w http.ResponseWriter) {
 	}
 }
 
-// call runs the Convex function fn.
+// call runs the site function fn.
 func (f *fakeSite) call(w http.ResponseWriter, fn string, args map[string]any) {
 	switch fn {
 	case "cli:latest":
@@ -351,7 +351,7 @@ func (f *fakeSite) r2Complete(w http.ResponseWriter, args map[string]any) {
 	delete(f.parts, id)
 	f.blobs[sha] = true
 	f.uploads[sha] = all
-	f.stored[sha], f.r2[sha] = all, true
+	f.stored[sha], f.completed[sha] = all, true
 	for _, e := range args["etags"].([]any) {
 		f.etagsOf[sha] = append(f.etagsOf[sha], e.(string))
 	}
@@ -362,7 +362,7 @@ func (f *fakeSite) blobURLs(w http.ResponseWriter, args map[string]any) {
 	found := []map[string]any{}
 	for _, h := range args["hashes"].([]any) {
 		urls := []string{f.url + "/blob/" + h.(string) + "/0", f.url + "/blob/" + h.(string) + "/1"}
-		if f.r2[h.(string)] {
+		if f.completed[h.(string)] {
 			urls = []string{f.url + "/blob/" + h.(string)}
 		}
 		if data, ok := f.stored[h.(string)]; ok {

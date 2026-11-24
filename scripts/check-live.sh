@@ -1,6 +1,6 @@
 #!/bin/sh
 # Says whether release vX can go live: v2.video serves the install.sh that knows Linux, and every file of vX
-# downloads through v2.video (Vercel, then Convex, then R2) and matches its checksums.txt.
+# downloads through v2.video and matches its checksums.txt.
 set -eu
 V=${1:?usage: scripts/check-live.sh vX.Y.Z}
 SITE=${V2_SITE:-https://v2.video}

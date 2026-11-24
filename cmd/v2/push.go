@@ -1,7 +1,7 @@
 package main
 
-// v2 push: send saved versions to v2.video. Talks to the site's Convex functions (convex/cli.ts)
-// over Convex's HTTP API. Media goes up once per user, keyed by sha256.
+// v2 push: send saved versions to v2.video over the site's HTTP API. Media goes up once per user,
+// keyed by sha256.
 
 import (
 	"errors"
@@ -84,7 +84,7 @@ func runPush(dir string) error {
 	var out struct {
 		VideoID string    `json:"videoId"`
 		URL     string    `json:"url"`
-		Pushed  []float64 `json:"pushed"` // Convex sends every number as a float: [1.0, 2.0]
+		Pushed  []float64 `json:"pushed"` // the site sends every number as a float: [1.0, 2.0]
 	}
 	if err := l.call("mutation", "cli:push", args, &out); err != nil {
 		return err

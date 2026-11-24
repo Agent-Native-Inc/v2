@@ -59,7 +59,7 @@ func TestCloneGitProjectRoundTrip(t *testing.T) {
 		t.Fatalf("last line: %s", out)
 	}
 	if site.redirects == 0 {
-		t.Fatal("no download went through the site's redirect to R2")
+		t.Fatal("no download went through the site's redirect to storage")
 	}
 	if got, want := git(t, dir, "tag", "--list", "--format=%(refname:short) %(objectname)"), git(t, proj, "tag", "--list", "--format=%(refname:short) %(objectname)"); got != want {
 		t.Fatalf("tags %s, want %s", got, want)

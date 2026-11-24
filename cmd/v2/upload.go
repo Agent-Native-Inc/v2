@@ -1,6 +1,6 @@
 package main
 
-// Uploading a push's blobs to R2: multipart, resumable, and checked against the account's room first.
+// Uploading a push's blobs to storage: multipart, resumable, and checked against the account's room first.
 
 import (
 	"bytes"
@@ -20,17 +20,17 @@ import (
 // resumes from its last finished part. Kept in .git/, never part of a version. With no path it
 // remembers them only in memory.
 type uploads struct {
-	path string
-	R2   map[string]*r2Upload `json:"r2"` // by sha256
+	path  string
+	Files map[string]*partUpload `json:"r2"` // by sha256; old binaries read this key
 }
 
-type r2Upload struct {
+type partUpload struct {
 	UploadID string   `json:"uploadId"`
 	ETags    []string `json:"etags"` // of its first parts, in order
 }
 
 func loadUploads(gitDir string) (*uploads, error) {
-	d := &uploads{path: filepath.Join(gitDir, "v2-uploads.json"), R2: map[string]*r2Upload{}}
+	d := &uploads{path: filepath.Join(gitDir, "v2-uploads.json"), Files: map[string]*partUpload{}}
 	if err := readJSON(d.path, d); err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (u uploader) small(missing []string) error {
 		go func() {
 			defer wg.Done()
 			defer func() { <-slots }()
-			one := uploader{l: u.l, blobs: u.blobs, sent: &store.Progress{}, done: &uploads{R2: map[string]*r2Upload{}}}
+			one := uploader{l: u.l, blobs: u.blobs, sent: &store.Progress{}, done: &uploads{Files: map[string]*partUpload{}}}
 			err := one.blob(h)
 			mu.Lock()
 			defer mu.Unlock()
@@ -132,7 +132,7 @@ func (u uploader) small(missing []string) error {
 	return firstErr
 }
 
-// blob sends a blob to R2 in parts of partSize, skipping parts an earlier push already
+// blob sends a blob to storage in parts of partSize, skipping parts an earlier push already
 // sent, then has the site join them and register the file under its sha256.
 func (u uploader) blob(sum string) error {
 	src := u.blobs[sum]
@@ -152,19 +152,19 @@ func (u uploader) blob(sum string) error {
 		k, _ := r.ReadAt(head, 0)
 		ctype = http.DetectContentType(head[:k])
 	}
-	up := u.done.R2[sum]
+	up := u.done.Files[sum]
 	if up == nil {
-		up = &r2Upload{ETags: []string{}}
+		up = &partUpload{ETags: []string{}}
 		if err := u.l.call("action", "cli:r2Start", u.l.authed(map[string]any{"sha256": sum, "size": src.size, "contentType": ctype}), up); err != nil {
 			return err
 		}
-		u.done.R2[sum] = up
+		u.done.Files[sum] = up
 		if err := u.done.save(); err != nil {
 			return err
 		}
 	}
 	forget := func() error {
-		delete(u.done.R2, sum)
+		delete(u.done.Files, sum)
 		return u.done.save()
 	}
 	u.sent.Add(min(int64(len(up.ETags))*partSize, src.size))

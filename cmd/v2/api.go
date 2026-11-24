@@ -1,6 +1,6 @@
 package main
 
-// Talking to v2.video: the signed-in login, Convex calls over its HTTP API, and the GETs and PUTs of
+// Talking to v2.video: the signed-in login, calls to the site's HTTP API, and the GETs and PUTs of
 // blob bytes, which end only when no bytes move for a while.
 
 import (
@@ -23,10 +23,10 @@ import (
 const (
 	defaultServer = "https://festive-scorpion-564.convex.cloud"
 	defaultSite   = "https://v2.video"
-	// R2 takes at most 10,000 parts per file, so 64 MiB parts cover a file up to 625 GiB.
+	// Storage takes at most 10,000 parts per file, so 64 MiB parts cover a file up to 625 GiB.
 	partSize = 64 << 20
 	tries    = 3
-	// How many hashes go to the site in one call, to stay inside Convex's read limit.
+	// How many hashes go to the site in one call, to stay inside the site's per-call read limit.
 	blobBatch = 200
 	// A part's upload or download ends once no bytes move for this long. Not a limit on the whole
 	// part, which takes many minutes on a slow link.
@@ -72,7 +72,7 @@ func (l login) authed(args map[string]any) map[string]any {
 	return args
 }
 
-// call runs a Convex query or mutation and decodes its value into out (nil to ignore it).
+// call runs one site function and decodes its value into out (nil to ignore it).
 func (l login) call(kind, fn string, args map[string]any, out any) error {
 	return l.callCtx(context.Background(), kind, fn, args, out)
 }
@@ -99,13 +99,13 @@ func (l login) callCtx(ctx context.Context, kind, fn string, args map[string]any
 		Value        json.RawMessage `json:"value"`
 		ErrorMessage string          `json:"errorMessage"`
 		ErrorData    json.RawMessage `json:"errorData"`
-		Message      string          `json:"message"` // a request Convex rejects before running fn
+		Message      string          `json:"message"` // a request the site rejects before running fn
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
 	var syntax *json.SyntaxError
 	var wrongType *json.UnmarshalTypeError
 	switch {
-	case r.Status == "" && res.StatusCode >= 500: // a 5xx with no function result is infrastructure: a gateway's page or an overloaded Convex
+	case r.Status == "" && res.StatusCode >= 500: // a 5xx with no function result is infrastructure: a gateway's page or an overloaded server
 		if r.Message != "" {
 			return fmt.Errorf("%w: %s got HTTP %d: %s", errUnreachable, fn, res.StatusCode, r.Message)
 		}
@@ -116,7 +116,7 @@ func (l login) callCtx(ctx context.Context, kind, fn string, args map[string]any
 		return fmt.Errorf("v2.video sent a bad reply to %s (HTTP %d)", fn, res.StatusCode)
 	}
 	if r.Status != "success" {
-		var msg string // a ConvexError's own message is in errorData
+		var msg string // the function's own error message is in errorData
 		_ = json.Unmarshal(r.ErrorData, &msg)
 		return errors.New(cmp.Or(msg, r.ErrorMessage, r.Message, fmt.Sprintf("v2.video refused %s (HTTP %d)", fn, res.StatusCode)))
 	}
@@ -206,7 +206,7 @@ func fetch(u string) ([]byte, error) {
 
 var errNoUpload = errors.New("v2.video no longer has this file's unfinished upload; run `v2 push` again to start it over")
 
-// putPart PUTs one part to a signed URL and returns its ETag, or errNoUpload once R2 has dropped the upload.
+// putPart PUTs one part to a signed URL and returns its ETag, or errNoUpload once storage has dropped the upload.
 func putPart(u string, part *io.SectionReader, sent io.Writer) (string, error) {
 	var etag string
 	err := untilStall(func(ctx context.Context, moved io.Writer) error {
@@ -225,7 +225,7 @@ func putPart(u string, part *io.SectionReader, sent io.Writer) (string, error) {
 		switch {
 		case res.StatusCode == http.StatusOK && etag != "":
 			return nil
-		case res.StatusCode == http.StatusNotFound: // R2 drops an unfinished upload after a week
+		case res.StatusCode == http.StatusNotFound: // storage drops an unfinished upload after a week
 			return errNoUpload
 		}
 		return fmt.Errorf("HTTP %d", res.StatusCode)

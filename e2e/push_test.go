@@ -221,7 +221,7 @@ func TestPushResumesAfterAKilledPush(t *testing.T) {
 		t.Fatalf("finished uploads are still listed: %s", got)
 	}
 
-	// R2 drops an unfinished upload after a week; the push after that starts the file over.
+	// Storage drops an unfinished upload after a week; the push after that starts the file over.
 	big = writeRandom(t, filepath.Join(proj, "assets/generated/broll.mp4"), 2*partSize+8<<20)
 	save(t, proj, "-m", "new b-roll", "--change", "new b-roll")
 	sha = sum(big)
@@ -571,7 +571,7 @@ func TestLogoutOfflineForgetsTheLogin(t *testing.T) {
 }
 
 // A connection that drops while login waits for the approval costs one check, not the login: before
-// the reply, in the middle of it, at a gateway in front of v2.video, or at an overloaded Convex, whose reason is shown.
+// the reply, in the middle of it, at a gateway in front of v2.video, or at an overloaded server, whose reason is shown.
 func TestLoginWaitsThroughADroppedConnection(t *testing.T) {
 	for _, fault := range []string{"drop", "cut", "502", "503"} {
 		t.Run(fault, func(t *testing.T) {
@@ -582,7 +582,7 @@ func TestLoginWaitsThroughADroppedConnection(t *testing.T) {
 				t.Fatalf("exit %d: %s", code, out)
 			}
 			if fault == "503" && !strings.Contains(out, "cli:whoami got HTTP 503: Service temporarily unavailable") {
-				t.Fatalf("Convex's reason was lost: %s", out)
+				t.Fatalf("the server's reason was lost: %s", out)
 			}
 			if out, code := v2(t, t.TempDir(), env, "logout"); code != 0 || !site.loggedOut {
 				t.Fatalf("the login wasn't kept: exit %d: %s", code, out)

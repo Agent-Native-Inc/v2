@@ -22,7 +22,7 @@ import (
 // cloneMarker sits beside the objects of an unfinished clone, so a rerun only ever clears its own folder.
 const cloneMarker = "clone-of"
 
-// whole reads Convex's numbers, which are all floats ("3.0"), as integers.
+// whole reads the site's numbers, which are all floats ("3.0"), as integers.
 type whole int64
 
 func (w *whole) UnmarshalJSON(b []byte) error {

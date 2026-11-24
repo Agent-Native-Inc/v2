@@ -1,8 +1,8 @@
 package main
 
-// v2 update and the once-a-day "new version" notice. Releases live in R2 under cli/<version>/ and
-// are fetched through the Convex site's /cli/ redirects. checksums.txt is signed with ed25519; the
-// download must match its signed sha256 before anything on disk changes.
+// v2 update and the once-a-day "new version" notice. Releases download from the site under
+// /cli/<version>/. checksums.txt is signed with ed25519; the download must match its signed sha256
+// before anything on disk changes.
 
 import (
 	"archive/zip"
