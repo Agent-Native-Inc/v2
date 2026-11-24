@@ -13,7 +13,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 const (

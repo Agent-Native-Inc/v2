@@ -5,8 +5,8 @@ package main
 import (
 	"os"
 
-	"github.com/Agent-Native-Inc/v2/internal/media"
-	"github.com/Agent-Native-Inc/v2/internal/platform"
+	"github.com/agentnativeinc/v2/internal/media"
+	"github.com/agentnativeinc/v2/internal/platform"
 	"github.com/spf13/cobra"
 )
 

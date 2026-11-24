@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Agent-Native-Inc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/store"
 )
 
 // whoami is what cli:whoami says about the signed-in account; nil until a login is approved.

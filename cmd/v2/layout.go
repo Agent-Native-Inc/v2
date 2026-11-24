@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 // The fixed folders of a project made with `v2 init` in an empty folder.

@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/platform"
+	"github.com/agentnativeinc/v2/internal/platform"
 )
 
 // Need errors, with how to install it, when ffmpeg or ffprobe is missing.

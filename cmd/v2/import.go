@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Agent-Native-Inc/v2/internal/store"
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 func runImport(dir string, files []string, as string) error {

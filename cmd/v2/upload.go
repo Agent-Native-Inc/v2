@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/Agent-Native-Inc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/store"
 )
 
 // uploads remembers multipart uploads not yet completed, so a push that dies (network, Ctrl-C)

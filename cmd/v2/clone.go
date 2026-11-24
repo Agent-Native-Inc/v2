@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
-	"github.com/Agent-Native-Inc/v2/internal/store"
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/store"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 // cloneMarker sits beside the objects of an unfinished clone, so a rerun only ever clears its own folder.

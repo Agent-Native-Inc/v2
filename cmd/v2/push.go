@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/gitx"
 )
 
 var heading = regexp.MustCompile(`(?m)^#\s+(.+)$`)

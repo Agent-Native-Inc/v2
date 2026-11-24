@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"slices"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/gitx"
 )
 
 type siteComment struct {

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Agent-Native-Inc/v2/internal/walk"
+	"github.com/agentnativeinc/v2/internal/walk"
 )
 
 // Comments are the user's comments on a version, left on the `v2 diff` page for the agent to act on.

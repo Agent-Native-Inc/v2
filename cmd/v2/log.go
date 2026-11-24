@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Agent-Native-Inc/v2/internal/gitx"
+	"github.com/agentnativeinc/v2/internal/gitx"
 )
 
 // runLog prints every version, newest first: its title, the prompts and model, what changed,
