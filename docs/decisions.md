@@ -357,3 +357,9 @@ Two outside reviewers, given only the code and docs, both said the core is right
 - **No `V2_ROOT` setting** that limits v2 to one folder. It breaks v2 living inside an existing project (see "init leaves an existing repo alone"), and a setting in one shell protects nothing in the next one.
 - **`init` refuses the folders that hold far more than one video.** These are `/`, `/Users`, `/home`, the temp folder, home, and its Desktop, Documents, Downloads, Movies, Music and Pictures. Folders inside them are fine. The same holds on Linux. A root user (home `/root`) is still refused in `/home`, and a desktop Linux has the same English folder names. The error says to make a folder and run init there, because agents act on errors. `clone` always makes a new folder, so it needs no check.
 - **Agents are told too.** `v2 --help` and the AGENTS.md section say a new video gets its own folder. AGENTS.md arrives with init, so it helps an agent starting its next video. The refusal covers the first one.
+
+## Pointing people to Discord (2026-11-25)
+- **Trigger:** far fewer people are in the Discord than use v2, so bug reports don't reach the team. Users rarely visit v2.video, but their agent talks to them all the time.
+- **The agent mentions Discord only when v2 fails or falls short.** AGENTS.md tells it to give the link when a `v2` command fails in a way it can't fix, or the user wants something v2 doesn't do, at most once per session. v2 can't tell who is already in the Discord, so a mention tied to a problem is the one that doesn't nag people who already joined.
+- **`v2 login` prints the link once,** because login happens once per computer.
+- **No per-push or per-session line.** Every push would repeat it to people already there.

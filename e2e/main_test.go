@@ -147,7 +147,7 @@ func TestInitTeachesAgents(t *testing.T) {
 	if !strings.HasPrefix(agents, "# Alice's rules\nuse tabs\n") {
 		t.Fatalf("init changed the user's AGENTS.md:\n%s", agents)
 	}
-	if strings.Count(agents, "<!-- v2: start -->") != 1 || !strings.Contains(agents, "v2 save -m") {
+	if strings.Count(agents, "<!-- v2: start -->") != 1 || !strings.Contains(agents, "v2 save -m") || !strings.Contains(agents, "discord.gg/") {
 		t.Fatalf("v2 section missing or duplicated:\n%s", agents)
 	}
 	if got := read(t, filepath.Join(dir, "CLAUDE.md")); got != "@AGENTS.md\n" {
