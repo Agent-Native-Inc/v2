@@ -22,6 +22,8 @@ type whoami struct {
 	StoredBytes, LimitBytes *float64
 }
 
+const discordInvite = "https://discord.gg/yfjtP6wSgP"
+
 func runLogin() error {
 	server := envOr("V2_SERVER", defaultServer)
 	// Agents run login before every push, so a login that still works ends here instead of printing a code and waiting for an approval.
@@ -63,6 +65,7 @@ func runLogin() error {
 			return err
 		}
 		fmt.Printf("Signed in as %s (%s)\n", who.Name, who.Email)
+		fmt.Println("Bugs, questions or ideas? The team reads them on Discord: " + discordInvite)
 		return nil
 	}
 	if down != nil {

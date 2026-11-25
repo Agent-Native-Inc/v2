@@ -578,7 +578,7 @@ func TestLoginWaitsThroughADroppedConnection(t *testing.T) {
 			site, env := newSite(t)
 			site.pollFaults = []string{fault}
 			out, code := v2(t, t.TempDir(), env, "login")
-			if code != 0 || !strings.Contains(out, "Signed in as Alice") {
+			if code != 0 || !strings.Contains(out, "Signed in as Alice") || !strings.Contains(out, "on Discord: https://discord.gg/") {
 				t.Fatalf("exit %d: %s", code, out)
 			}
 			if fault == "503" && !strings.Contains(out, "cli:whoami got HTTP 503: Service temporarily unavailable") {
