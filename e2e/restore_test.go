@@ -116,11 +116,11 @@ func TestRestoreRefusesUnsavedWork(t *testing.T) {
 			change(t, dir)
 			before := snapshot(t, dir)
 
-			refused(t, dir, []string{"restore", "v1"}, "unsaved", "v2 save")
+			refused(t, dir, []string{"restore", "v1"}, "unsaved", "v2 save", "--prompt")
 			sameFiles(t, "folder after refused restore", snapshot(t, dir), before)
 
 			// After saving, the restore goes through and the saved work stays restorable.
-			save(t, dir, "-m", "keep it", "--change", name)
+			mustRun(t, dir, gitIdentity, "save", "-m", "keep it", "--prompt", "keep these edits", "--change", name)
 			saved := snapshot(t, dir) // save updates .gitignore's list of binaries
 			restore(t, dir, "v1")
 			sameFiles(t, "after save + restore v1", snapshot(t, dir), v1)
