@@ -33,6 +33,19 @@ func TestSaveStoresStructuredChanges(t *testing.T) {
 	refused(t, proj, []string{"save", "--prompt", "make it", "-m", "x", "--change", "0:09-0:04 backwards"}, "ends before it starts")
 }
 
+func TestDiffBeforeFirstSave(t *testing.T) {
+	proj := t.TempDir()
+	newProject(t, proj)
+	body := get(t, serveDiff(t, proj)+"api/versions", "", 200)
+	var api struct {
+		Versions []json.RawMessage `json:"versions"`
+	}
+	must(t, json.Unmarshal([]byte(body), &api))
+	if api.Versions == nil || len(api.Versions) != 0 {
+		t.Fatalf("want an empty versions array, got %s", body)
+	}
+}
+
 func TestDiffServesVersionsAndRenders(t *testing.T) {
 	proj := t.TempDir()
 	newProject(t, proj)
