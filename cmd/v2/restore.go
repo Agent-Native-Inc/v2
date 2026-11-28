@@ -117,7 +117,7 @@ func refuseUnsaved(dir, v string) error {
 		shown = append(slices.Clone(dirty[:10]), fmt.Sprintf("... and %d more", len(dirty)-10))
 	}
 	return fmt.Errorf("can't restore %s: %d unsaved change(s) would be lost:\n  %s\n"+
-		"Save them first with `v2 save -m \"...\" --change \"...\"`, then run `v2 restore %s` again.",
+		"Save them first with `v2 save -m \"<title>\" --prompt \"<user's original message>\" --change \"<what changed>\"`, then run `v2 restore %s` again.",
 		v, len(dirty), strings.Join(shown, "\n  "), v)
 }
 
