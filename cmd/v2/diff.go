@@ -142,7 +142,7 @@ func (s *diffServer) loadViews() ([]versionView, error) {
 	if err != nil {
 		return nil, err
 	}
-	var views []versionView
+	views := make([]versionView, 0, len(versions))
 	for _, v := range versions {
 		view, err := s.views.get(v)
 		if err != nil {
